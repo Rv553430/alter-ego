@@ -62,7 +62,7 @@ const dotsStyle: React.CSSProperties = {
 };
 
 export default function LoadingState({ stage, error }: LoadingStateProps) {
-  const intervalRef = useRef<ReturnType<typeof setInterval>>();
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [dots, setDots] = useState("");
 
   useEffect(() => {
