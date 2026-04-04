@@ -283,14 +283,6 @@ export default function AlterEgoCard({ result, username, avatarUrl }: AlterEgoCa
               );
             }
 
-            if (line.type === "loading") {
-              return (
-                <p key={i} style={{ ...styles.line, ...styles.loading }}>
-                  {line.text}
-                </p>
-              );
-            }
-
             return (
               <p key={i} style={styles.line}>
                 <span style={styles.label}>{line.label}: </span>
