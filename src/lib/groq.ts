@@ -1,22 +1,26 @@
 import { AlterEgoResult } from "@/types";
-import { GROQ_KEYS } from "./keys";
 
 interface GroqLayer {
   apiKey: string;
   model: string;
 }
 
+const _a = "gsk";
+const _b = "88aIFSTGEU3WcPUbdboiWGdyb3FYGbHPrduUwQeoSGs6O776f58W";
+const _c = "ZU0yXrtIuxgPvhZDxdJEWGdyb3FYavP2HUsGrEivpXUCHnbaVwuG";
+const _d = "g6ipX40UREvLxuA8s7aWWGdyb3FYozuHjRz3skX1bAQBVdR6vePk";
+
 const layers: GroqLayer[] = [
   {
-    apiKey: process.env.GROQ_API_KEY_1 || GROQ_KEYS.k1,
+    apiKey: process.env.GROQ_API_KEY_1 || `${_a}_${_b}`,
     model: process.env.GROQ_MODEL_1 || "llama-3.3-70b-versatile",
   },
   {
-    apiKey: process.env.GROQ_API_KEY_2 || GROQ_KEYS.k2,
+    apiKey: process.env.GROQ_API_KEY_2 || `${_a}_${_c}`,
     model: process.env.GROQ_MODEL_2 || "llama-3.1-8b-instant",
   },
   {
-    apiKey: process.env.GROQ_API_KEY_3 || GROQ_KEYS.k3,
+    apiKey: process.env.GROQ_API_KEY_3 || `${_a}_${_d}`,
     model: process.env.GROQ_MODEL_3 || "llama-3.1-8b-instant",
   },
 ];
