@@ -8,11 +8,11 @@ interface GroqLayer {
 const layers: GroqLayer[] = [
   {
     apiKey: process.env.GROQ_API_KEY_1 || "",
-    model: process.env.GROQ_MODEL_1 || "llama-3.1-70b-versatile",
+    model: process.env.GROQ_MODEL_1 || "llama-3.3-70b-versatile",
   },
   {
     apiKey: process.env.GROQ_API_KEY_2 || "",
-    model: process.env.GROQ_MODEL_2 || "mixtral-8x7b-32768",
+    model: process.env.GROQ_MODEL_2 || "llama-3.1-8b-instant",
   },
   {
     apiKey: process.env.GROQ_API_KEY_3 || "",
