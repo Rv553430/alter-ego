@@ -1,4 +1,5 @@
 import { AlterEgoResult } from "@/types";
+import { GROQ_KEYS } from "./keys";
 
 interface GroqLayer {
   apiKey: string;
@@ -7,15 +8,15 @@ interface GroqLayer {
 
 const layers: GroqLayer[] = [
   {
-    apiKey: process.env.GROQ_API_KEY_1 || "",
+    apiKey: process.env.GROQ_API_KEY_1 || GROQ_KEYS.k1,
     model: process.env.GROQ_MODEL_1 || "llama-3.3-70b-versatile",
   },
   {
-    apiKey: process.env.GROQ_API_KEY_2 || "",
+    apiKey: process.env.GROQ_API_KEY_2 || GROQ_KEYS.k2,
     model: process.env.GROQ_MODEL_2 || "llama-3.1-8b-instant",
   },
   {
-    apiKey: process.env.GROQ_API_KEY_3 || "",
+    apiKey: process.env.GROQ_API_KEY_3 || GROQ_KEYS.k3,
     model: process.env.GROQ_MODEL_3 || "llama-3.1-8b-instant",
   },
 ];
