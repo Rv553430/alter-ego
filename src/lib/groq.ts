@@ -40,6 +40,9 @@ Personality: [2-4 words]
 Aura Score: [0-100]
 Roast: [1 short witty line]`;
 
+const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
+const REQUEST_TIMEOUT = 30000;
+
 function parseResponse(text: string): AlterEgoResult {
   const lines = text.trim().split("\n").filter((l) => l.trim());
 
@@ -62,15 +65,35 @@ function parseResponse(text: string): AlterEgoResult {
       personality = trimmed.replace(/^Personality:\s*/, "").trim();
     } else if (trimmed.startsWith("Aura Score:")) {
       const score = trimmed.replace(/^Aura Score:\s*/, "").trim();
-      auraScore = parseInt(score, 10) || 50;
-      if (auraScore < 0) auraScore = 0;
-      if (auraScore > 100) auraScore = 100;
+      const parsed = parseInt(score, 10);
+      if (!isNaN(parsed)) {
+        auraScore = Math.min(100, Math.max(0, parsed));
+      }
     } else if (trimmed.startsWith("Roast:")) {
       roast = trimmed.replace(/^Roast:\s*/, "").trim();
     }
   }
 
   return { name, bio, personality, auraScore, roast };
+}
+
+async function fetchWithTimeout(url: string, options: RequestInit, timeout: number): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    return response;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export async function generateAlterEgo(
@@ -94,29 +117,43 @@ Detect the tone, personality type, and writing style. Then generate the alter eg
     const layer = layers[i];
 
     if (!layer.apiKey) {
+      console.warn(`Layer ${i + 1}: No API key, skipping`);
       continue;
     }
 
     try {
-      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${layer.apiKey}`,
+      console.log(`Trying layer ${i + 1}: ${layer.model}`);
+
+      const response = await fetchWithTimeout(
+        GROQ_API_URL,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${layer.apiKey}`,
+          },
+          body: JSON.stringify({
+            model: layer.model,
+            messages: [
+              { role: "system", content: SYSTEM_PROMPT },
+              { role: "user", content: userPrompt },
+            ],
+            temperature: 0.8,
+            max_tokens: 500,
+          }),
         },
-        body: JSON.stringify({
-          model: layer.model,
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            { role: "user", content: userPrompt },
-          ],
-          temperature: 0.8,
-          max_tokens: 500,
-        }),
-      });
+        REQUEST_TIMEOUT
+      );
 
       if (!response.ok) {
         const errBody = await response.text();
+
+        if (response.status === 429) {
+          console.warn(`Layer ${i + 1}: Rate limited, trying next layer`);
+          await sleep(1000);
+          throw new Error("Rate limited");
+        }
+
         throw new Error(`Groq API error ${response.status}: ${errBody}`);
       }
 
@@ -127,10 +164,17 @@ Detect the tone, personality type, and writing style. Then generate the alter eg
         throw new Error("Empty response from AI");
       }
 
+      console.log(`Layer ${i + 1} succeeded`);
       return parseResponse(responseText);
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
-      console.warn(`Layer ${i + 1} (${layer.model}) failed:`, lastError.message);
+
+      if (lastError.name === "AbortError") {
+        console.warn(`Layer ${i + 1} (${layer.model}): Request timed out`);
+      } else {
+        console.warn(`Layer ${i + 1} (${layer.model}) failed:`, lastError.message);
+      }
+
       continue;
     }
   }

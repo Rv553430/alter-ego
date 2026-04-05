@@ -28,13 +28,20 @@ export default function Home() {
       });
 
       if (!scrapeRes.ok) {
-        const err = await scrapeRes.json();
+        const err = await scrapeRes.json().catch(() => ({ error: "Failed" }));
+        if (scrapeRes.status === 429) {
+          throw new Error("Too many requests. Wait a minute and try again.");
+        }
         throw new Error(err.error || "Profile not found. Try another username.");
       }
 
       const scrapeData = await scrapeRes.json();
-      const profile = scrapeData.data;
 
+      if (!scrapeData.success || !scrapeData.data) {
+        throw new Error("Failed to fetch profile data");
+      }
+
+      const profile = scrapeData.data;
       setAvatarUrl(profile.avatar || "");
 
       setStage("generating");
@@ -49,11 +56,22 @@ export default function Home() {
       });
 
       if (!generateRes.ok) {
-        const err = await generateRes.json();
+        const err = await generateRes.json().catch(() => ({ error: "Failed" }));
+        if (generateRes.status === 429) {
+          throw new Error("Too many requests. Wait a minute and try again.");
+        }
+        if (generateRes.status === 503) {
+          throw new Error("AI service is busy. Try again in a moment.");
+        }
         throw new Error(err.error || "AI failed to generate. Try again.");
       }
 
       const generateData = await generateRes.json();
+
+      if (!generateData.success || !generateData.data) {
+        throw new Error("Failed to generate alter ego");
+      }
+
       setResult(generateData.data);
       setStage("done");
     } catch (err) {
